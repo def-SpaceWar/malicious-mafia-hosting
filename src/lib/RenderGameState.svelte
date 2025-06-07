@@ -274,10 +274,6 @@
         opacity: 50%;
     }
 
-    p {
-        font-size: 75%;
-    }
-
     ul {
         display: flex;
         justify-content: center;
@@ -373,11 +369,5 @@
         display: flex;
         width: 100vw;
         justify-content: center;
-    }
-
-    #doublenotes div p {
-        position: absolute;
-        transform: translate(100%, -200%);
-        opacity: 25%;
     }
 </style>

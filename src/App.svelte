@@ -22,17 +22,18 @@
 </script>
 
 <nav>
-    <div id="spacer" />
+    <div id="spacer"></div>
 
     {#each gameStates as gameState, idx}
         <button
+            aria-label={idx.toString()}
             on:click={() => setState(idx)}
             disabled={idx == index}
             class={gameState.night ? "night" : "day"}
         ></button>
     {/each}
 
-    <div id="spacer" />
+    <div id="spacer"></div>
 
     <button on:click={prevState} disabled={index == 0}>&lt;</button>
     <button on:click={nextState} disabled={index == gameStates.length - 1}>
