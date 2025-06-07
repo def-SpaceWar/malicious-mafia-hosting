@@ -2,18 +2,31 @@
     import { fade, slide } from "svelte/transition";
     import { GameState, Player } from "./game";
     export let gameState: GameState;
-    let varName: string,
-        votes: Record<number, (number | "skip")[]> = {};
+    let varName: string;
+    let enabledColumns: boolean[] = new Array(
+        1 +
+            Object.keys(Player.prototype.requiredData).length +
+            gameState.extraVars.length,
+    ).fill(true);
 
-    const addVar = () => {
+    const resetColumns = () => {
+            enabledColumns = new Array(
+                1 +
+                    Object.keys(Player.prototype.requiredData).length +
+                    gameState.extraVars.length,
+            ).fill(true);
+        },
+        addVar = () => {
             if (gameState.extraVars.indexOf(varName) != -1) return;
             gameState.extraVars.push(varName);
             gameState.extraVars = gameState.extraVars;
+            resetColumns();
         },
         removeVar = (variable: string) => {
             gameState.extraVars = gameState.extraVars.filter(
                 (v) => v != variable,
             );
+            resetColumns();
         },
         addPlayer = () => {
             gameState.players.push(new Player(gameState));
@@ -25,13 +38,13 @@
             resetVotes();
         },
         resetVotes = () => {
-            votes = {};
+            gameState.votes = {};
         },
         getVoteScore = (player: Player, id: number) => {
             let score = player.requiredData["Vote Protection"];
-            nextPlayer: for (const key in votes) {
+            nextPlayer: for (const key in gameState.votes) {
                 const other = gameState.players[key];
-                for (const value of votes[key]) {
+                for (const value of gameState.votes[key]) {
                     if (value == id) {
                         score -=
                             other.requiredData["Voting Power"] *
@@ -44,9 +57,9 @@
         },
         getSkipScore = () => {
             let score = 0;
-            nextPlayer: for (const key in votes) {
+            nextPlayer: for (const key in gameState.votes) {
                 const other = gameState.players[key];
-                for (const value of votes[key]) {
+                for (const value of gameState.votes[key]) {
                     if (value == "skip") {
                         score -= other.requiredData["Voting Power"];
                         continue nextPlayer;
@@ -90,12 +103,36 @@
                 <th>
                     <button on:click={addPlayer} class="new">New Player</button>
                 </th>
-                <th>Name</th>
-                {#each Object.keys(Player.prototype.requiredData) as key (key)}
-                    <th>{key}</th>
+                <th>
+                    Name
+                    <input type="checkbox" bind:checked={enabledColumns[0]} />
+                </th>
+                {#each Object.keys(Player.prototype.requiredData) as key, i (key)}
+                    <th>
+                        {key}
+                        <input
+                            type="checkbox"
+                            bind:checked={enabledColumns[1 + i]}
+                        />
+                    </th>
                 {/each}
-                {#each gameState.extraVars as extra (extra)}
-                    <th>{extra}</th>
+                {#each gameState.extraVars as extra, i (extra)}
+                    <th>
+                        {extra}
+
+                        <input
+                            type="checkbox"
+                            bind:checked={
+                                enabledColumns[
+                                    1 +
+                                        Object.keys(
+                                            Player.prototype.requiredData,
+                                        ).length +
+                                        i
+                                ]
+                            }
+                        />
+                    </th>
                 {/each}
             </tr>
         </thead>
@@ -111,16 +148,22 @@
                         </button>
                     </th>
                     <th>
-                        <input bind:value={player.name} />
+                        {#if enabledColumns[0]}
+                            <input bind:value={player.name} />
+                        {/if}
                     </th>
-                    {#each Object.keys(Player.prototype.requiredData) as key (key)}
+                    {#each Object.keys(Player.prototype.requiredData) as key, i (key)}
                         <th>
-                            <input bind:value={player.requiredData[key]} />
+                            {#if enabledColumns[1 + i]}
+                                <input bind:value={player.requiredData[key]} />
+                            {/if}
                         </th>
                     {/each}
-                    {#each gameState.extraVars as extra (extra)}
+                    {#each gameState.extraVars as extra, i (extra)}
                         <th>
-                            <input bind:value={player.extraData[extra]} />
+                            {#if enabledColumns[1 + Object.keys(Player.prototype.requiredData).length + i]}
+                                <input bind:value={player.extraData[extra]} />
+                            {/if}
                         </th>
                     {/each}
                 </tr>
@@ -171,7 +214,7 @@
                                     type="checkbox"
                                     name={player.name}
                                     value={selectedId}
-                                    bind:group={votes[id]}
+                                    bind:group={gameState.votes[id]}
                                 />
                             </th>
                         {/each}
@@ -180,7 +223,7 @@
                                 type="checkbox"
                                 name={player.name}
                                 value={"skip"}
-                                bind:group={votes[id]}
+                                bind:group={gameState.votes[id]}
                             />
                         </th>
                     </tr>
@@ -191,14 +234,19 @@
         </table>
     {/if}
 
-    <textarea
-        bind:value={gameState.notes}
-        placeholder="Note everything that happens!"
-    ></textarea>
-
     {#if gameState.prevNotes}
-        <p>Previously...</p>
-        <textarea disabled bind:value={gameState.prevNotes}></textarea>
+        <div id="doublenotes">
+            <textarea disabled bind:value={gameState.prevNotes}></textarea>
+            <textarea
+                bind:value={gameState.notes}
+                placeholder="Note everything that happens!"
+            ></textarea>
+        </div>
+    {:else}
+        <textarea
+            bind:value={gameState.notes}
+            placeholder="Note everything that happens!"
+        ></textarea>
     {/if}
 </center>
 
@@ -214,8 +262,7 @@
         top: 0;
         width: 100vw;
         height: 95vh - 4rem;
-        overflow-x: hidden;
-        overflow-y: scroll;
+        overflow: scroll;
         padding-bottom: 4rem;
     }
 
@@ -224,6 +271,7 @@
         top: 0;
         right: 0;
         margin: 0.5rem;
+        opacity: 50%;
     }
 
     p {
@@ -247,12 +295,20 @@
     table {
         font-size: 75%;
         padding: 0.25rem;
-        margin: 0.25rem;
+        margin: 0;
+        margin-top: 0.25rem;
+        margin-bottom: 0.25rem;
         background-color: #0e1c2a;
+        width: 100%;
     }
 
     th {
-        padding: 0.1rem;
+        padding-left: 0.1rem;
+        padding-right: 0.1rem;
+        padding-top: 0.2rem;
+        padding-bottom: 0.2rem;
+        min-width: 5%;
+        max-width: 15%;
     }
 
     th input {
@@ -279,6 +335,11 @@
         color: #cceeff;
         outline: none;
         border: none;
+        margin: 0;
+    }
+
+    textarea:disabled {
+        filter: brightness(90%);
     }
 
     input {
@@ -306,5 +367,17 @@
         background-color: #fa3154;
         color: #cceeff;
         font-weight: bold;
+    }
+
+    #doublenotes {
+        display: flex;
+        width: 100vw;
+        justify-content: center;
+    }
+
+    #doublenotes div p {
+        position: absolute;
+        transform: translate(100%, -200%);
+        opacity: 25%;
     }
 </style>

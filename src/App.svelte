@@ -22,21 +22,24 @@
 </script>
 
 <nav>
-    <button on:click={prevState} disabled={index == 0}>&lt;</button>
+    <div id="spacer" />
 
     {#each gameStates as gameState, idx}
         <button
             on:click={() => setState(idx)}
-            class={(idx == index ? "selected " : "unselected ") +
-                (gameState.night ? "night" : "day")}
+            disabled={idx == index}
+            class={gameState.night ? "night" : "day"}
         ></button>
     {/each}
 
+    <div id="spacer" />
+
+    <button on:click={prevState} disabled={index == 0}>&lt;</button>
     <button on:click={nextState} disabled={index == gameStates.length - 1}>
         &gt;
     </button>
 
-    <button on:click={nextStateForceRecalc}>
+    <button on:click={nextStateForceRecalc} id="calculate">
         {index == gameStates.length - 1 ? "CALCULATE" : "RECALCULATE"}
     </button>
 </nav>
@@ -63,15 +66,6 @@
         font-size: 150%;
     }
 
-    button {
-        background-color: #162c42;
-        border: none;
-        color: #ffffff;
-        font-size: 1rem;
-        margin-left: 0.25rem;
-        margin-right: 0.25rem;
-    }
-
     nav {
         position: fixed;
         left: 0;
@@ -85,13 +79,19 @@
         flex-direction: row;
         background-color: #0e1c2a;
         z-index: 1;
+        box-shadow: 0px -1rem 1rem #0001;
     }
 
-    .unselected {
-        filter: brightness(50%);
+    button {
+        background-color: #162c42;
+        border: none;
+        color: #ffffff;
+        font-size: 1rem;
+        margin-left: 0.25rem;
+        margin-right: 0.25rem;
     }
 
-    .unselected:hover {
+    button:hover {
         filter: brightness(150%);
     }
 
@@ -100,6 +100,7 @@
         height: 1rem;
         border-radius: 1rem;
         background-color: #2186cc;
+        filter: brightness(50%);
     }
 
     .day {
@@ -107,5 +108,19 @@
         height: 1rem;
         border-radius: 1rem;
         background-color: #f8e866;
+        filter: brightness(50%);
+    }
+
+    .day:disabled,
+    .night:disabled {
+        filter: brightness(100%);
+    }
+
+    #spacer {
+        flex-grow: 1;
+    }
+
+    #calculate {
+        width: 10rem;
     }
 </style>

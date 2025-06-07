@@ -1,5 +1,6 @@
 export class GameState {
     notes = "";
+    votes: Record<number, (number | "skip")[]> = {};
 
     constructor(
         public players: Player[],
